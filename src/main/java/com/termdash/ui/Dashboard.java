@@ -11,7 +11,6 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.termdash.service.CryptoService;
 import com.termdash.service.EnvironmentService;
 import com.termdash.service.SystemMonitor;
-import oshi.software.os.OSProcess;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -30,7 +29,7 @@ public class Dashboard {
     private final CryptoService cryptoService;
     private final DecimalFormat df = new DecimalFormat("0.0");
     
-    private List<OSProcess> cachedProcesses = Collections.emptyList();
+    private List<SystemMonitor.ProcessMetric> cachedProcesses = Collections.emptyList();
     private long lastProcessUpdate = 0;
 
     // Matrix Theme Colors
@@ -176,11 +175,11 @@ public class Dashboard {
             
             int pY = bottomY + 3;
             for (int i = 0; i < cachedProcesses.size(); i++) {
-                OSProcess p = cachedProcesses.get(i);
+                SystemMonitor.ProcessMetric p = cachedProcesses.get(i);
                 String name = p.getName();
                 if (name.length() > 15) name = name.substring(0, 15);
                 
-                double pCpu = 100d * (p.getKernelTime() + p.getUserTime()) / p.getUpTime();
+                double pCpu = p.getCpuUsage();
                 
                 String line = String.format("%d. %-15s (%.1f%%)", i + 1, name, pCpu);
                 

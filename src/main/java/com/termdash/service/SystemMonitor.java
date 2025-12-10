@@ -11,7 +11,11 @@ import oshi.software.os.OSFileStore;
 import oshi.software.os.OSProcess;
 import oshi.software.os.OperatingSystem;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SystemMonitor {
     private final SystemInfo systemInfo;
@@ -30,6 +34,8 @@ public class SystemMonitor {
     private long lastNetUpdate = 0;
     private long cachedRxSpeed = 0;
     private long cachedTxSpeed = 0;
+
+    private Map<Integer, OSProcess> prevProcesses = new HashMap<>();
 
     public SystemMonitor() {
         this.systemInfo = new SystemInfo();
@@ -165,8 +171,44 @@ public class SystemMonitor {
         return "N/A";
     }
 
-    public List<OSProcess> getTopProcesses(int limit) {
-        return os.getProcesses(null, OperatingSystem.ProcessSorting.CPU_DESC, limit);
+    public List<ProcessMetric> getTopProcesses(int limit) {
+        List<OSProcess> currentProcesses = os.getProcesses();
+        List<ProcessMetric> metrics = new ArrayList<>();
+        int cpuCount = processor.getLogicalProcessorCount();
+
+        for (OSProcess p : currentProcesses) {
+            OSProcess prev = prevProcesses.get(p.getProcessID());
+            double cpuUsage = 0.0;
+            if (prev != null) {
+                cpuUsage = 100d * p.getProcessCpuLoadBetweenTicks(prev) / cpuCount;
+            }
+            metrics.add(new ProcessMetric(p.getName(), cpuUsage));
+        }
+
+        prevProcesses.clear();
+        for (OSProcess p : currentProcesses) {
+            prevProcesses.put(p.getProcessID(), p);
+        }
+
+        metrics.sort(Comparator.comparingDouble(ProcessMetric::getCpuUsage).reversed());
+
+        if (metrics.size() > limit) {
+            return metrics.subList(0, limit);
+        }
+        return metrics;
+    }
+
+    public static class ProcessMetric {
+        private final String name;
+        private final double cpuUsage;
+
+        public ProcessMetric(String name, double cpuUsage) {
+            this.name = name;
+            this.cpuUsage = cpuUsage;
+        }
+
+        public String getName() { return name; }
+        public double getCpuUsage() { return cpuUsage; }
     }
 
     public long getTotalMemory() {
