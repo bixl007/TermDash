@@ -11,9 +11,7 @@ import oshi.software.os.OSFileStore;
 import oshi.software.os.OSProcess;
 import oshi.software.os.OperatingSystem;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class SystemMonitor {
     private final SystemInfo systemInfo;
@@ -55,7 +53,7 @@ public class SystemMonitor {
 
     public double getCpuLoad() {
         long now = System.currentTimeMillis();
-        if (now - lastCpuUpdate > 1000) { // Update every 1 second
+        if (now - lastCpuUpdate > 1000) {
             long[] ticks = processor.getSystemCpuLoadTicks();
             cachedCpuLoad = processor.getSystemCpuLoadBetweenTicks(prevTicks);
             prevTicks = ticks;
@@ -72,12 +70,11 @@ public class SystemMonitor {
         long now = System.currentTimeMillis();
         long timeDelta = now - lastNetUpdate;
         
-        if (timeDelta > 1000) { // Update every 1 second
+        if (timeDelta > 1000) { 
             List<NetworkIF> networkIFs = hardware.getNetworkIFs();
             long totalRx = 0;
             long totalTx = 0;
             
-            // Re-initialize arrays if interface count changes (simple handling)
             if (networkIFs.size() != prevNetBytesRecv.length) {
                 this.prevNetBytesRecv = new long[networkIFs.size()];
                 this.prevNetBytesSent = new long[networkIFs.size()];

@@ -8,7 +8,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class EnvironmentService {
@@ -30,7 +29,6 @@ public class EnvironmentService {
                 }
             }
         } catch (Exception e) {
-            // Ignore, likely not a git repo
         }
         return "DETACHED / NO GIT";
     }
@@ -51,7 +49,7 @@ public class EnvironmentService {
                 .build();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://wttr.in/Jalandhar?format=3")) // Simplified location
+                .uri(URI.create("https://wttr.in/Jalandhar?format=3")) 
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                 .build();
 
@@ -70,7 +68,6 @@ public class EnvironmentService {
                 .exceptionally(e -> {
                     String msg = e.getMessage();
                     if (e.getCause() != null) msg = e.getCause().getMessage();
-                    // Shorten error for UI
                     if (msg != null && msg.length() > 20) msg = msg.substring(0, 20) + "..";
                     this.cachedWeather = "ERR: " + msg;
                     return null;

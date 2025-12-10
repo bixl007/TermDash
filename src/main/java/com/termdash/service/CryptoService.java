@@ -16,11 +16,10 @@ public class CryptoService {
 
     private final Map<String, Double> prices = new HashMap<>();
     private long lastUpdate = 0;
-    private static final long UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(60); // 1 min cache
+    private static final long UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(60);
     private boolean isUpdating = false;
 
     public CryptoService() {
-        // Initial placeholder values
         prices.put("bitcoin", 0.0);
         prices.put("ethereum", 0.0);
         prices.put("solana", 0.0);
@@ -42,7 +41,6 @@ public class CryptoService {
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
 
-        // CoinGecko API
         String url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin,monero&vs_currencies=usd";
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -63,7 +61,6 @@ public class CryptoService {
                         }
                         lastUpdate = System.currentTimeMillis();
                     } catch (Exception e) {
-                        // Keep old prices on error
                     } finally {
                         isUpdating = false;
                     }

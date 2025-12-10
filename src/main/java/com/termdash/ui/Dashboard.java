@@ -1,6 +1,5 @@
 package com.termdash.ui;
 
-import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.Symbols;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
@@ -44,7 +43,7 @@ public class Dashboard {
         Terminal terminal = new DefaultTerminalFactory().createTerminal();
         this.screen = new TerminalScreen(terminal);
         this.screen.startScreen();
-        this.screen.setCursorPosition(null); // Hide cursor
+        this.screen.setCursorPosition(null);
         this.tg = screen.newTextGraphics();
         
         this.sysMon = new SystemMonitor();
@@ -59,13 +58,11 @@ public class Dashboard {
             draw();
             screen.refresh();
 
-            // Handle input (exit on 'q' or 'Esc')
             var key = screen.pollInput();
             if (key != null && (key.getCharacter() != null && key.getCharacter() == 'q' || key.getKeyType() == com.googlecode.lanterna.input.KeyType.Escape)) {
                 break;
             }
 
-            // Cap at ~30 FPS or just sleep a bit
             long sleepTime = 100 - (System.currentTimeMillis() - startTime);
             if (sleepTime > 0) Thread.sleep(sleepTime);
         }
@@ -77,15 +74,12 @@ public class Dashboard {
         int width = size.getColumns();
         int height = size.getRows();
 
-        // Update Network Stats
         sysMon.updateNetworkSpeeds();
 
-        // Clear background
         tg.setBackgroundColor(BACK_COLOR);
         tg.setForegroundColor(TEXT_COLOR);
         tg.fill(' ');
 
-        // --- System Stats Section (Left Top) ---
         int leftWidth = width / 2 - 2;
         int statsHeight = 16; 
         
@@ -121,7 +115,6 @@ public class Dashboard {
         tg.setForegroundColor(HIGHLIGHT_COLOR);
         tg.putString(15, 13, String.valueOf(threads));
 
-        // --- Network & Environment Section (Right Top) ---
         int rightX = width / 2 + 1;
         int rightWidth = width / 2 - 3;
         
@@ -168,12 +161,10 @@ public class Dashboard {
         tg.setForegroundColor(HIGHLIGHT_COLOR);
         tg.putString(rightX + 11, 13, formatBytes(tx) + "/s");
 
-        // --- Bottom Sections ---
         int bottomY = 2 + statsHeight;
         int bottomHeight = height - bottomY - 3;
         
         if (bottomHeight > 6) {
-            // --- Parasite Radar (Left Bottom) ---
             long now = System.currentTimeMillis();
             if (now - lastProcessUpdate > 2000) {
                 cachedProcesses = sysMon.getTopProcesses(3);
@@ -189,7 +180,6 @@ public class Dashboard {
                 String name = p.getName();
                 if (name.length() > 15) name = name.substring(0, 15);
                 
-                // Note: getProcessCpuLoadCumulative() is easier for snapshot
                 double pCpu = 100d * (p.getKernelTime() + p.getUserTime()) / p.getUpTime();
                 
                 String line = String.format("%d. %-15s (%.1f%%)", i + 1, name, pCpu);
@@ -198,13 +188,12 @@ public class Dashboard {
                 tg.putString(4, pY + i, line);
             }
 
-            // --- Crypto Ticker (Right Bottom) ---
             Map<String, Double> prices = cryptoService.getPrices();
             int cY = bottomY + 2;
             String[] coins = {"bitcoin", "ethereum", "solana", "dogecoin", "monero"};
             String[] symbols = {"BTC", "ETH", "SOL", "DOGE", "XMR"};
             
-            int maxPriceLen = rightWidth - 12; // Leave room for border and padding
+            int maxPriceLen = rightWidth - 12; 
             for (int i = 0; i < coins.length; i++) {
                 if (cY + i >= bottomY + bottomHeight - 1) break;
                 
@@ -221,11 +210,8 @@ public class Dashboard {
             }
         }
 
-        // --- DRAW BORDERS LAST ---
-        // Draw Main Border
         drawBox(0, 0, width, height, " TERMDASH SYSTEM V1.0");
         
-        // Draw Section Borders
         drawBox(2, 2, leftWidth, statsHeight, " SYSTEM VITALS ");
         drawBox(rightX, 2, rightWidth, statsHeight, " NETWORK & ENV ");
         
@@ -234,7 +220,6 @@ public class Dashboard {
             drawBox(rightX, bottomY, rightWidth, bottomHeight, " CRYPTO TICKER ");
         }
 
-        // --- Footer / Status ---
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         String footer = " STATUS: ONLINE | TIME: " + time + " | PRESS 'q' TO DISCONNECT ";
         tg.setForegroundColor(TEXT_COLOR);
@@ -251,25 +236,21 @@ public class Dashboard {
     private void drawBox(int x, int y, int width, int height, String title) {
         tg.setForegroundColor(TEXT_COLOR);
         
-        // Corners
         tg.setCharacter(x, y, Symbols.SINGLE_LINE_TOP_LEFT_CORNER);
         tg.setCharacter(x + width - 1, y, Symbols.SINGLE_LINE_TOP_RIGHT_CORNER);
         tg.setCharacter(x, y + height - 1, Symbols.SINGLE_LINE_BOTTOM_LEFT_CORNER);
         tg.setCharacter(x + width - 1, y + height - 1, Symbols.SINGLE_LINE_BOTTOM_RIGHT_CORNER);
 
-        // Horizontal lines
         for (int i = x + 1; i < x + width - 1; i++) {
             tg.setCharacter(i, y, Symbols.SINGLE_LINE_HORIZONTAL);
             tg.setCharacter(i, y + height - 1, Symbols.SINGLE_LINE_HORIZONTAL);
         }
 
-        // Vertical lines
         for (int i = y + 1; i < y + height - 1; i++) {
             tg.setCharacter(x, i, Symbols.SINGLE_LINE_VERTICAL);
             tg.setCharacter(x + width - 1, i, Symbols.SINGLE_LINE_VERTICAL);
         }
 
-        // Title
         if (title != null && !title.isEmpty()) {
             tg.setForegroundColor(HIGHLIGHT_COLOR);
             tg.putString(x + 2, y, title);
@@ -278,23 +259,19 @@ public class Dashboard {
     }
 
     private void drawProgressBar(int x, int y, int width, String label, double percentage) {
-        // Label
         tg.setForegroundColor(TEXT_COLOR);
         tg.putString(x, y, label);
         String percentStr = df.format(percentage * 100) + "%";
         tg.putString(x + width - percentStr.length(), y, percentStr);
 
-        // Bar
         int barWidth = width;
         int filledWidth = (int) (barWidth * percentage);
         
-        // Draw empty bar
-        tg.setForegroundColor(TextColor.ANSI.BLACK_BRIGHT); // Dark Grey
+        tg.setForegroundColor(TextColor.ANSI.BLACK_BRIGHT);
         for (int i = 0; i < barWidth; i++) {
             tg.setCharacter(x + i, y + 1, Symbols.BLOCK_MIDDLE);
         }
 
-        // Draw filled bar
         for (int i = 0; i < filledWidth; i++) {
             if (percentage > 0.9) tg.setForegroundColor(ALERT_COLOR);
             else if (percentage > 0.7) tg.setForegroundColor(TextColor.ANSI.YELLOW);
